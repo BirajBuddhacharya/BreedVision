@@ -15,7 +15,7 @@ class BreedClassifier(nn.Module):
         self.model.fc = nn.Linear(in_features, 200)
 
     def forward(self, x): 
-        return model(x)
+        return self.model(x)
 
 def getModel(): 
     # selecting device 
