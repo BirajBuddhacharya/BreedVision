@@ -14,7 +14,7 @@ def train():
 
     # Initialize model and move it to the selected device
     model = getModel().to(device)
-    backup_model_path = 'models/model_backup_epoch.pth'
+    backup_model_path = 'outputs/model_backup_epoch.pth'
 
     # Load model checkpoint if available
     if os.path.exists(backup_model_path):
@@ -59,7 +59,7 @@ def train():
 
     except KeyboardInterrupt:
         print("Training interrupted. Saving model checkpoint...")
-        torch.save(model.state_dict(), 'models/model_backup.pth')
+        torch.save(model.state_dict(), 'outputs/model_backup.pth')
 
 if __name__ == '__main__': 
     train()
