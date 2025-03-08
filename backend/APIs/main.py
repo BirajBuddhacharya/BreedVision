@@ -1,6 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from time import sleep
+import matplotlib.pyplot as plt 
+from PIL import Image
 
 app = FastAPI()
 
@@ -13,7 +15,13 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-@app.get('/test')
+@app.get('/test/')
 def test(): 
     sleep(5) # simulating work
     return {'message': 'test success'}
+
+@app.post("/predict/")
+async def predict(file: UploadFile = File(...)): 
+    image = Image.open(file.file).convert('RGB')
+    print('test')
+    return {'message': "test success"}

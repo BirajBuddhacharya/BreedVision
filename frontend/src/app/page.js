@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { FileUpload } from "@/components/ui/file-upload";
+import { toast } from "react-toastify";
+import axios from 'axios';
 
 export default function Home() {
   const [file, setFile] = useState(null);
@@ -18,17 +20,24 @@ export default function Home() {
     const fetchData = async () => {
       setLoading(true)
       try {
-        const response = await fetch('http://127.0.0.1:8000/test')
+        const response = await axios.post('http://127.0.0.1:8000/predict/', {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          body: {
+            'file': file
+          }
+        })
         if (!response.ok) {
           throw new Error("Error fetching data")
         }
 
         const result = await response.json()
         setApiData(result)
-        console.log(result['message'])
+        toast.success(result['message'])
 
       }
-      catch (error) { console.log(error) }
+      catch (error) { toast.error(`Error: ${error}`) }
       finally { setLoading(false) }
     }
 
