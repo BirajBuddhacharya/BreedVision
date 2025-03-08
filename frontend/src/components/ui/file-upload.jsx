@@ -3,6 +3,7 @@ import React, { useRef, useState } from "react";
 import { motion } from "motion/react";
 import { IconUpload } from "@tabler/icons-react";
 import { useDropzone } from "react-dropzone";
+import ClipLoader from "react-spinners/ClipLoader";
 
 const mainVariant = {
   initial: {
@@ -26,7 +27,8 @@ const secondaryVariant = {
 };
 
 export const FileUpload = ({
-  onChange
+  onChange,
+  loading
 }) => {
   const [files, setFiles] = useState([]);
   const fileInputRef = useRef(null);
@@ -74,7 +76,17 @@ export const FileUpload = ({
             className="relative z-20 font-sans text-center font-normal text-neutral-400 dark:text-neutral-400 text-base mt-2">
             Drag or drop your picture here or click to upload
           </p>
-          <div className="relative w-full mt-10 max-w-xl mx-auto">
+          <div className={loading ? "mt-6" : ""}>
+            <ClipLoader
+              color='#ffffff'
+              loading={loading}
+              size={80}
+              aria-label="Loading Spinner"
+              data-testid="loader"
+            />
+          </div>
+          {!loading && (
+            <div className="relative w-full mt-10 max-w-xl mx-auto">
             {files.length > 0 &&
               files.map((file, idx) => (
                 <motion.div
@@ -151,6 +163,7 @@ export const FileUpload = ({
                 className="absolute opacity-0 border border-dashed border-sky-400 inset-0 z-30 bg-transparent flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md"></motion.div>
             )}
           </div>
+          )}
         </div>
       </motion.div>
     </div>)
@@ -169,11 +182,10 @@ export function GridPattern() {
           return (
             (<div
               key={`${col}-${row}`}
-              className={`w-10 h-10 flex shrink-0 rounded-[2px] ${
-                index % 2 === 0
-                  ? "bg-gray-50 dark:bg-neutral-950"
-                  : "bg-gray-50 dark:bg-neutral-950 shadow-[0px_0px_1px_3px_rgba(255,255,255,1)_inset] dark:shadow-[0px_0px_1px_3px_rgba(0,0,0,1)_inset]"
-              }`} />)
+              className={`w-10 h-10 flex shrink-0 rounded-[2px] ${index % 2 === 0
+                ? "bg-gray-50 dark:bg-neutral-950"
+                : "bg-gray-50 dark:bg-neutral-950 shadow-[0px_0px_1px_3px_rgba(255,255,255,1)_inset] dark:shadow-[0px_0px_1px_3px_rgba(0,0,0,1)_inset]"
+                }`} />)
           );
         }))}
     </div>)
