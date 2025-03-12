@@ -1,11 +1,10 @@
 import os
 import re
-import time
-import requests
-from concurrent.futures import ThreadPoolExecutor
+import aiohttp  # Use aiohttp instead of requests
 from dotenv import load_dotenv
 import logging 
 from rich.logging import RichHandler
+import asyncio
 
 import sys; sys.path.append('.')
 from backend.config.breedList import dog_breeds
@@ -16,14 +15,14 @@ logging.basicConfig(
     handlers=[RichHandler(markup=True)]
 )
 # Adjust the logging level for the requests module
-logging.getLogger('requests').setLevel(logging.WARNING)  # This will suppress debug messages
+logging.getLogger('aiohttp').setLevel(logging.WARNING)  # This will suppress debug messages
 
 def sanitize_filename(title):
     """Removes invalid characters from filenames."""
     return re.sub(r'[\\/*?:"<>|]', "_", title)
 
-def extract(query, num, save_path):
-    def fetcher(link, title): 
+async def extract(query, num, save_path):
+    async def fetcher(session, link, title): 
         """Fetches an image and saves it to the specified path."""
         try:
             img_url = link
@@ -35,15 +34,14 @@ def extract(query, num, save_path):
                 logging.warning("File exists no changes made")
                 return
                         
-            response = requests.get(img_url, timeout=10)  # Set timeout to prevent hanging
-            response.raise_for_status()  # Raise an error for failed requests
+            async with session.get(img_url, timeout=10) as response:  # Using aiohttp's asynchronous get
+                response.raise_for_status()  # Raise an error for failed requests
 
-
-            with open(file_path, "wb") as f:
-                f.write(response.content)
+                with open(file_path, "wb") as f:
+                    f.write(await response.read())  # Read content asynchronously
 
             logging.info(f"[green]✔ {sanitized_title}.jpg[/green]")  
-        except requests.RequestException as e:
+        except aiohttp.ClientError as e:
             logging.error(f"[red]❌ Failed: {title} ({e})[/red]")  
 
     # Load API keys
@@ -55,13 +53,14 @@ def extract(query, num, save_path):
     url = f"https://www.googleapis.com/customsearch/v1?q={query}&cx={CX}&key={API_KEY}&searchType=image&num={num}"
 
     try:
-        response = requests.get(url, timeout=20)
-        response.raise_for_status()
-        data = response.json()
-        
-    except requests.RequestException as e:
+        async with aiohttp.ClientSession() as session:  # Create a session for all requests
+            async with session.get(url, timeout=20) as response:
+                response.raise_for_status()
+                data = await response.json()  # Parse response asynchronously
+                
+    except aiohttp.ClientError as e:
         logging.error(f"API request failed: {e}")
-        return
+        exit(0)
 
     # Catch API errors
     if "error" in data:
@@ -79,9 +78,10 @@ def extract(query, num, save_path):
     # Create folder to save images
     os.makedirs(save_path, exist_ok=True)
 
-    # Download images with threading
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        executor.map(fetcher, image_links, image_titles)
+    # Download images with asyncio
+    tasks = [fetcher(session, image_link, image_title) for image_link, image_title in zip(image_links, image_titles)]
+    
+    await asyncio.gather(*tasks)
 
     logging.info(f"Image download complete for {query}!")
 
@@ -100,7 +100,7 @@ def getVeriations(breed):
     ]
     return variations
 
-def getDog(breed): 
+async def getDog(breed): 
     variations = getVeriations(breed)
     
     folder_name = breed.replace(' ', '_').lower()
@@ -111,14 +111,15 @@ def getDog(breed):
         logging.info("[blue]Path already exists[/blue]")
         return
     
-    for variation in variations: 
-        extract(variation, 10, f'backend/data/raw/{full_path}/')
+    tasks = [extract(variation, 10, f'backend/data/raw/{full_path}/') for variation in variations]
 
-def main():
+    await asyncio.gather(*tasks)
+    
+async def main():
     breeds = dog_breeds
     
     for breed in breeds: 
-        getDog(breed)
+        await getDog(breed)
     
 if __name__ == '__main__': 
-    main()
+    asyncio.run(getDog("Scottish Terrier"))
