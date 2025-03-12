@@ -3,35 +3,48 @@ import re
 import time
 import requests
 from concurrent.futures import ThreadPoolExecutor
-from rich.live import Live
-from rich.panel import Panel
-from rich.columns import Columns
 from dotenv import load_dotenv
+import logging 
+from rich.logging import RichHandler
+
+import sys; sys.path.append('.')
+from backend.config.breedList import dog_breeds
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(message)s",
+    handlers=[RichHandler(markup=True)]
+)
+# Adjust the logging level for the requests module
+logging.getLogger('requests').setLevel(logging.WARNING)  # This will suppress debug messages
 
 def sanitize_filename(title):
     """Removes invalid characters from filenames."""
     return re.sub(r'[\\/*?:"<>|]', "_", title)
 
 def extract(query, num, save_path):
-    downloaded = []
-    errors = []
-
     def fetcher(link, title): 
         """Fetches an image and saves it to the specified path."""
         try:
             img_url = link
+            sanitized_title = sanitize_filename(title)
+            file_path = os.path.join(save_path, f"{sanitized_title}.jpg")
+            
+            # leaving early if duplicate exists
+            if os.path.exists(file_path): 
+                logging.warning("File exists no changes made")
+                return
+                        
             response = requests.get(img_url, timeout=10)  # Set timeout to prevent hanging
             response.raise_for_status()  # Raise an error for failed requests
 
-            sanitized_title = sanitize_filename(title)
-            file_path = os.path.join(save_path, f"{sanitized_title}.jpg")
 
             with open(file_path, "wb") as f:
                 f.write(response.content)
 
-            downloaded.append(f"[green]✔ {sanitized_title}.jpg[/green]")  
+            logging.info(f"[green]✔ {sanitized_title}.jpg[/green]")  
         except requests.RequestException as e:
-            errors.append(f"[red]❌ Failed: {title} ({e})[/red]")  
+            logging.error(f"[red]❌ Failed: {title} ({e})[/red]")  
 
     # Load API keys
     load_dotenv()
@@ -45,50 +58,67 @@ def extract(query, num, save_path):
         response = requests.get(url, timeout=20)
         response.raise_for_status()
         data = response.json()
+        
     except requests.RequestException as e:
-        print(f"API request failed: {e}")
+        logging.error(f"API request failed: {e}")
         return
 
     # Catch API errors
     if "error" in data:
-        print(f"Error found: {data['error']['code']} - {data['error']['message']}")
-        return
+        logging.error(f"Error found: {data['error']['code']} - {data['error']['message']}")
+        exit(0)
 
     # Extract image links and titles
     image_links = [item['link'] for item in data.get('items', [])]
     image_titles = [item['title'] for item in data.get('items', [])]
 
     if not image_links:
-        print("No images found.")
+        logging.info("No images found.")
         return
 
     # Create folder to save images
     os.makedirs(save_path, exist_ok=True)
 
-    # Dynamic UI update
-    with Live(refresh_per_second=4) as live:
-        def update_ui():
-            panel_downloaded = Panel("\n".join(downloaded) or "[yellow]No downloads yet[/yellow]", title="Downloaded Summary", border_style="green")
-            panel_errors = Panel("\n".join(errors) or "[yellow]No errors yet[/yellow]", title="Errors", border_style="red")
-            live.update(Columns([panel_downloaded, panel_errors]))
+    # Download images with threading
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        executor.map(fetcher, image_links, image_titles)
 
-        # Download images with threading
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            futures = [executor.submit(fetcher, link, title) for link, title in zip(image_links, image_titles)]
-            
-            for future in futures:
-                future.result()  # Ensure each thread completes
-                update_ui()  # Refresh UI after each download attempt
+    logging.info(f"Image download complete for {query}!")
 
-    print("Image download complete!")
+def getVeriations(breed): 
+    variations = [
+        breed, 
+        'puppies ' + breed, 
+        'old ' + breed, 
+        'cute ' + breed, 
+        'funny ' + breed, 
+        'happy ' + breed, 
+        'sad ' + breed, 
+        'angry ' + breed, 
+        'sleepy ' + breed, 
+        'playful ' + breed
+    ]
+    return variations
 
-def main(): 
-    dog_breeds = ["Rottweiler"]
+def getDog(breed): 
+    variations = getVeriations(breed)
+    
+    folder_name = breed.replace(' ', '_').lower()
+    full_path =  f'backend/data/raw/{folder_name}/'
+    
+    # skipping already existing breeds
+    if os.path.exists(full_path): 
+        logging.info("[blue]Path already exists[/blue]")
+        return
+    
+    for variation in variations: 
+        extract(variation, 10, f'backend/data/raw/{full_path}/')
 
-    for breed in dog_breeds: 
-        save_path = breed.replace(' ', '_').lower()
-        extract(breed, 10, f'backend/data/raw/{save_path}/')
-        break # for debugging
-
+def main():
+    breeds = dog_breeds
+    
+    for breed in breeds: 
+        getDog(breed)
+    
 if __name__ == '__main__': 
     main()
