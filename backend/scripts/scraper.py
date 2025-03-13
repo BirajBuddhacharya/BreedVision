@@ -125,4 +125,4 @@ async def main():
         await asyncio.gather(*tasks)
 
 if __name__ == '__main__':
-    asyncio.run(fetch_dog_images(aiohttp.ClientSession(), "Scottish Terrier"))
+    asyncio.run(main())
