@@ -108,8 +108,9 @@ async def fetch_dog_images(session: aiohttp.ClientSession, breed: str):
     folder_name = breed.replace(' ', '_').lower()
     save_path = Path(f"backend/data/raw/{folder_name}")
 
-    if save_path.exists():
-        logging.info(f"[blue]Skipping {breed}, folder already exists.[/blue]")
+    # skipping if folder exists and has greater then 10 pictures
+    if save_path.exists() and len([item for item in save_path.iterdir()]) <= 10:
+        logging.info(f"[blue]Skipping {breed}, folder already exists and has more then 10 pictures.[/blue]")
         return
 
     tasks = [extract_images(session, variation, 10, save_path) for variation in variations]
