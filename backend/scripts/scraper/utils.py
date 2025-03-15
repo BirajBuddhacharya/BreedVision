@@ -42,19 +42,21 @@ async def searchImage(session, query):
             data = await response.json()
     except aiohttp.ClientError as e:
         if e.status == 429:
+            # checking no API_KEY
+            if not API_KEY or not CX: 
+                logging.error(f"[red]All API key exhausted exiting for now: {e}[/red]")
+                return []
+            
             # switching exhausted apikey
             API_KEY.pop()
             CX.pop()
             
-            # checking no API_KEY
-            if not API_KEY or not CX: 
-                logging.error(f"[red]All API key exhausted exiting for now: {e}[/red]")
-                exit(0)
 
             logging.info("API Key exhausted switching API Key")
-            return searchImage(session, query)
+            return await searchImage(session, query)
             
         logging.error(f"[red]API request failed: {e}[/red]")
+        return []
         
     return [{'link': i['link'], 'title': i['title']} for i in data.get('items', [])]
 

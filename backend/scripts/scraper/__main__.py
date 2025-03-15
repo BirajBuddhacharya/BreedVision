@@ -36,6 +36,11 @@ async def downloadBreed(breed: str, session = None):
         search_tasks = [searchImage(session, variation) for variation in search_query_variations]
         search_results = await asyncio.gather(*search_tasks)
         search_results = [item for result in search_results for item in result] # modifying structure into single list of item
+        
+        # checking if search results exists (empty search if api key exhausted)
+        if not search_results: 
+            logging.info("Search is empty (API might be exhausted)")
+            return
     
         # downloading images
         download_tasks = [download(session, data['link'], data['title'], save_path) for data in search_results]
@@ -54,8 +59,15 @@ async def main():
     """
     
     async with aiohttp.ClientSession() as session:
-        tasks = [downloadBreed(session, breed) for breed in dog_breeds]
-        await asyncio.gather(*tasks)
+        tasks = [downloadBreed(breed, session=session) for breed in dog_breeds]
+
+        for task in asyncio.as_completed(tasks):  # Process tasks as they complete
+            result = await task
+            if not result:  # If any task fails, exit immediately
+                logging.error("API KEY ALL EXHAUSTED EXITING...")
+                sys.exit(1)  # Exit the program
+
+        logging.info("All downloads completed successfully.")
 
 if __name__ == '__main__':
-    asyncio.run(downloadBreed("Vizsla"))
+    asyncio.run(main())
