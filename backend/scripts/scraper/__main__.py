@@ -61,12 +61,13 @@ async def main():
     async with aiohttp.ClientSession() as session:
         tasks = [downloadBreed(breed, session=session) for breed in dog_breeds]
 
-        for task in asyncio.as_completed(tasks):  # Process tasks as they complete
-            result = await task
-            if not result:  # If any task fails, exit immediately
-                logging.error("API KEY ALL EXHAUSTED EXITING...")
-                sys.exit(1)  # Exit the program
+        # for task in asyncio.as_completed(tasks):  # Process tasks as they complete
+        #     result = await task
+        #     if result is None:  # If any task fails, exit immediately
+        #         logging.error("API KEY ALL EXHAUSTED EXITING...")
+        #         sys.exit(1)  # Exit the program
 
+        await asyncio.gather(*tasks)
         logging.info("All downloads completed successfully.")
 
 if __name__ == '__main__':
