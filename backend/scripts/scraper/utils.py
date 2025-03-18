@@ -46,7 +46,7 @@ async def searchImage(session, query):
         async with session.get(url, timeout=20) as response:
             response.raise_for_status()
             data = await response.json()
-    except aiohttp.ClientError as e:
+    except aiohttp.ClientResponseError as e:
         if e.status == 429:
             # checking no API_KEY
             if not API_KEY or not CX: 
