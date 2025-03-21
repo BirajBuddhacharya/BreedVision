@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import os
 from pathlib import Path
 import asyncio
+import sys
 
 # Load API keys
 load_dotenv()
@@ -34,13 +35,18 @@ def get_variations(breed: str):
 
 async def searchImage(session, query): 
     num = 10
-    url = f"https://www.googleapis.com/customsearch/v1?q={query}&cx={CX[-1]}&key={API_KEY[-1]}&searchType=image&num={num}"
+    try: 
+        url = f"https://www.googleapis.com/customsearch/v1?q={query}&cx={CX[-1]}&key={API_KEY[-1]}&searchType=image&num={num}"
 
+    except IndexError: 
+        logging.error("API Key might be exhausted system exiting")
+        return []
+        
     try:
         async with session.get(url, timeout=20) as response:
             response.raise_for_status()
             data = await response.json()
-    except aiohttp.ClientError as e:
+    except aiohttp.ClientResponseError as e:
         if e.status == 429:
             # checking no API_KEY
             if not API_KEY or not CX: 
@@ -50,15 +56,15 @@ async def searchImage(session, query):
             # switching exhausted apikey
             API_KEY.pop()
             CX.pop()
-            
 
             logging.info("API Key exhausted switching API Key")
             return await searchImage(session, query)
             
         logging.error(f"[red]API request failed: {e}[/red]")
         return []
-        
-    return [{'link': i['link'], 'title': i['title']} for i in data.get('items', [])]
+    
+    return_data = [{'link': i['link'], 'title': i['title']} for i in data.get('items', [])]
+    return return_data
 
 async def download(session: aiohttp.ClientSession, url: str, title: str, save_path: Path):
     """
