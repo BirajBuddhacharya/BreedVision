@@ -1,7 +1,7 @@
 from torchvision.datasets import ImageFolder
 from torchvision.transforms import transforms
 
-def getDataset(imageFolder): 
+def getDataset(imageFolder= 'backend/data/cleaned/'): 
     # formating image and augmenting data
     transform = transforms.Compose([
         transforms.Resize((256, 256)),  # Resize to slightly larger than final size

@@ -34,7 +34,7 @@ def train():
         model.load_state_dict(torch.load(backup_model_path, map_location=device))
 
     # Load dataset
-    dataset = getDataset(train_dic)
+    dataset = getDataset(imageFolder=train_dic)
 
     # Prepare DataLoader
     dataloader = DataLoader(dataset, batch_size=32, shuffle=True, num_workers=4, pin_memory=True if device == "cuda" else False)
