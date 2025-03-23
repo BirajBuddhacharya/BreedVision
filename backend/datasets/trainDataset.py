@@ -1,7 +1,7 @@
 from torchvision.datasets import ImageFolder
 from torchvision.transforms import transforms
 
-def getDataset(): 
+def getDataset(imageFolder): 
     # formating image and augmenting data
     transform = transforms.Compose([
         transforms.Resize((256, 256)),  # Resize to slightly larger than final size
@@ -21,7 +21,7 @@ def getDataset():
         )
     ])
     
-    dataset = ImageFolder('data/train', transform=transform)
+    dataset = ImageFolder(imageFolder, transform=transform)
     
     return dataset
 

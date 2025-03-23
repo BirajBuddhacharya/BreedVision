@@ -4,8 +4,11 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from datasets.trainDataset import getDataset
-from models.model import getModel
+from backend.datasets.trainDataset import getDataset
+from backend.models.model import getModel
+
+# global vairables 
+train_dic = 'backend/data/cleaned'
 
 def train():
     # Define device (GPU if available, else CPU)
@@ -14,7 +17,7 @@ def train():
 
     # Initialize model and move it to the selected device
     model = getModel().to(device)
-    backup_model_path = 'outputs/model_backup_epoch.pth'
+    backup_model_path = 'backend/outputs/model_backup_epoch.pth'
 
     # Load model checkpoint if available
     if os.path.exists(backup_model_path):
@@ -22,7 +25,7 @@ def train():
         model.load_state_dict(torch.load(backup_model_path, map_location=device))
 
     # Load dataset
-    dataset = getDataset()
+    dataset = getDataset(train_dic)
 
     # Prepare DataLoader
     dataloader = DataLoader(dataset, batch_size=32, shuffle=True, num_workers=4, pin_memory=True if device == "cuda" else False)
