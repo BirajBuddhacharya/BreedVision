@@ -13,16 +13,17 @@ logging.basicConfig(
     format="%(message)s",
     handlers=[RichHandler(markup=True)]
 )
-    
+imgDownloadThreshold = 30    
+
 async def downloadBreed(breed: str, session = None): 
     # making folder to save downloaded images
     folder_name = breed.replace(' ', '_').lower()
     save_path = Path(f"backend/data/raw/{folder_name}")
     save_path.mkdir(exist_ok=True, parents= True)
     
-     # skipping folder already has greater then 10 pictures
-    if not len([item for item in save_path.iterdir()]) <= 10:
-        logging.info(f"[blue]Skipping {breed}, folder already exists and has more then 10 pictures.[/blue]")
+     # skipping folder already has greater then imgDownloadThreshold pictures
+    if not len([item for item in save_path.iterdir()]) <= imgDownloadThreshold:
+        logging.info(f"[blue]Skipping {breed}, folder already exists and has more then {imgDownloadThreshold} pictures.[/blue]")
         return
     
     # making search virations

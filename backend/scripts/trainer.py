@@ -4,25 +4,37 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from datasets.trainDataset import getDataset
-from models.model import getModel
+from backend.datasets.trainDataset import getDataset
+from backend.models.model import getModel
+from rich.logging import RichHandler
+import logging
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(message)s",
+    handlers=[RichHandler(markup=True)]
+)
+
+# global vairables 
+train_dic = 'backend/data/cleaned'
+train_epoch = 10
 
 def train():
     # Define device (GPU if available, else CPU)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Using device: {device}")
+    logging.info(f"Using device: {device}")
 
     # Initialize model and move it to the selected device
     model = getModel().to(device)
-    backup_model_path = 'outputs/model_backup_epoch.pth'
+    backup_model_path = 'backend/outputs/model_backup_epoch.pth'
 
     # Load model checkpoint if available
     if os.path.exists(backup_model_path):
-        print("Loading model from backup...")
+        logging.info("Loading model from backup...")
         model.load_state_dict(torch.load(backup_model_path, map_location=device))
 
     # Load dataset
-    dataset = getDataset()
+    dataset = getDataset(imageFolder=train_dic)
 
     # Prepare DataLoader
     dataloader = DataLoader(dataset, batch_size=32, shuffle=True, num_workers=4, pin_memory=True if device == "cuda" else False)
@@ -32,7 +44,7 @@ def train():
     optimizer = optim.Adam(model.parameters(), lr=0.01)
 
     # Training parameters
-    epochs = 50
+    epochs = train_epoch
 
     # Training loop
     try:
@@ -54,12 +66,12 @@ def train():
             # Print and save model every 2 epochs
             if epoch % 2 == 0:
                 avg_loss = running_loss / len(dataloader)
-                print(f'Epoch [{epoch}/{epochs}], Loss: {avg_loss:.4f}')
+                logging.info(f'Epoch [{epoch}/{epochs}], Loss: {avg_loss:.4f}')
                 torch.save(model.state_dict(), backup_model_path)
 
     except KeyboardInterrupt:
-        print("Training interrupted. Saving model checkpoint...")
-        torch.save(model.state_dict(), 'outputs/model_backup.pth')
+        logging.info("Training interrupted. Saving model checkpoint...")
+        torch.save(model.state_dict(), 'backend/outputs/model_backup.pth')
 
 if __name__ == '__main__': 
     train()
