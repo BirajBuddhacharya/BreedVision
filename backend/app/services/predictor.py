@@ -5,7 +5,6 @@ from rich.logging import RichHandler
 from backend.models.model import getModel
 from PIL import Image
 from torchvision.transforms import transforms
-import os 
 from backend.datasets.trainDataset import getDataset
 
 # logging configurations
@@ -15,6 +14,20 @@ logging.basicConfig(
 )
 #global vairables 
 ...
+
+def load_model(): 
+    global model 
+    global yolo 
+    
+    # Load YOLOv5 model
+    yolo = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+        
+    # loading model 
+    model = getModel()
+    model.load_state_dict(torch.load('backend/outputs/BreedClassifier.pth'))
+    model.eval() # setting to eval mode
+    
+    
 def predict(image: Image) -> str: 
     def clean(image: Image) -> Image:
         """
@@ -26,10 +39,10 @@ def predict(image: Image) -> str:
         Returns:
             PIL.Image | None: A cropped image of the detected dog or None if no dog is detected or if there are multiple dogs.
         """
-        
-        # Load YOLOv5 model
-        yolo = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
-        
+        if not yolo: 
+            logging.info('yolo not loaded, loading now...')
+            load_model()
+    
         # Perform inference on the image
         results = yolo(image)
         df = results.pandas().xyxy[0]  # Extract prediction dataframe
@@ -51,11 +64,10 @@ def predict(image: Image) -> str:
         cropped_image = image.crop((row['xmin'], row['ymin'], row['xmax'], row['ymax']))
         
         return cropped_image
-
-    # loading model 
-    model = getModel()
-    model.load_state_dict(torch.load('backend/outputs/BreedClassifier.pth'))
-    model.eval() # setting to eval mode
+    
+    if not model: 
+        logging.info('Model not loaded, loading now...')
+        load_model()
     
     # loading image
     image = image.convert("RGB")
