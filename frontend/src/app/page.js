@@ -53,7 +53,8 @@ export default function Home() {
   }, [breedImage]);
 
   return (
-    <main className="flex h-screen items-center justify-center">
+    <main className="flex h-screen items-center justify-center flex-col gap-10">
+      { !apiData ? (<span className="text-3xl text-center w-full">Know Your Dog's Breed</span>) : null }
       <motion.div
         layout
         transition={{ type: "spring", stiffness: 200, damping: 20 }}
@@ -61,7 +62,6 @@ export default function Home() {
       >
         {!apiData ? (
           <div>
-            <div className="text-3xl text-center w-full">Know your dogs breed</div>
             <FileUpload onChange={handleFileUpload} loading={loading} />
           </div>
         ) : (
