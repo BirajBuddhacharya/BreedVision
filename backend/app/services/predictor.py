@@ -6,10 +6,11 @@ from backend.models.model import getModel
 from PIL import Image
 from torchvision.transforms import transforms
 from backend.datasets.trainDataset import getDataset
+import os 
 
 # logging configurations
 logging.basicConfig(
-    level = logging.DEBUG, 
+    level = logging.INFO, 
     handlers = [RichHandler(markup=True)], 
 )
 #global vairables 
@@ -20,8 +21,10 @@ def load_model():
     global yolo 
     
     # Load YOLOv5 model
+    os.chdir('backend/outputs') # loading yolo in outputs
     yolo = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
-        
+    os.chdir('../..') # changing back to original dir 
+    
     # loading model 
     model = getModel()
     model.load_state_dict(torch.load('backend/outputs/BreedClassifier.pth'))
