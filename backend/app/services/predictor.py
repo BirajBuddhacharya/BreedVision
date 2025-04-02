@@ -6,6 +6,7 @@ from backend.models.model import getModel
 from PIL import Image
 from torchvision.transforms import transforms
 from backend.datasets.trainDataset import getDataset
+import os 
 
 # logging configurations
 logging.basicConfig(
@@ -20,6 +21,7 @@ def load_model():
     global yolo 
     
     # Load YOLOv5 model
+    os.environ['TORCH_HOME'] = 'backend/outputs/' # Set custom cache directory
     yolo = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
         
     # loading model 
