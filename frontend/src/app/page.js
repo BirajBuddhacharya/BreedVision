@@ -47,29 +47,6 @@ export default function Home() {
     fetchData()
   }, [file])
 
-  // fetching image of breed
-  useEffect(() => {
-    const fetchImage = async () => {
-      // skipping for no apiData
-      if (!apiData) return;
-
-      try {
-        const response = await axios.get(`http://localhost:8000/getImage?breed=${apiData.breed}`, {
-          responseType: "blob", // Ensure response is treated as binary data
-        });
-
-        // Create a URL for the blob response
-        const url = URL.createObjectURL(new Blob([response.data]));
-        setBreedImage(url);
-
-      } catch (error) {
-        toast.error(`Error fetching image: ${error}`);
-      }
-    };
-
-    fetchImage();
-  }, [apiData]);
-
   // Debugging: Logs breedImage only when it changes
   useEffect(() => {
     console.log("Updated breedImage:", breedImage);
