@@ -10,7 +10,7 @@ import os
 
 # logging configurations
 logging.basicConfig(
-    level = logging.DEBUG, 
+    level = logging.INFO, 
     handlers = [RichHandler(markup=True)], 
 )
 #global vairables 
