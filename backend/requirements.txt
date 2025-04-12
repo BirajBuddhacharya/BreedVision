@@ -1,0 +1,6 @@
+fastapi
+rich
+sqlalchemy
+torch
+torchvision
+psycopg2-binary
